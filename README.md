@@ -60,7 +60,6 @@ Windows base layer changes:
 - Rightmost top-row key: **Win+L** (lock screen).
 - Key immediately right of Right Alt: **Application / context menu**.
 - Default RGB mode: **Typing Heatmap**.
-- Default debounce: **30 ms**.
 - When Scroll Lock is on, the three top-right LEDs (indices 13, 14, 15) are forced to full red; otherwise the current RGB effect shows through.
 
 To build it, copy `keymap.c`, `config.h` and `rules.mk` into a keymap directory such as:
