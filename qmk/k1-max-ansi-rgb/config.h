@@ -1,0 +1,11 @@
+#pragma once
+
+#ifdef DEBOUNCE
+#    undef DEBOUNCE
+#endif
+#define DEBOUNCE 30
+
+#ifdef RGB_MATRIX_DEFAULT_MODE
+#    undef RGB_MATRIX_DEFAULT_MODE
+#endif
+#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_TYPING_HEATMAP
