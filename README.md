@@ -51,34 +51,41 @@ Remove it with:
 
 ## QMK firmware: K1 Max ANSI RGB
 
-The `qmk/k1-max-ansi-rgb` directory is a customized copy of Keychron's `via` keymap for `keychron/k1_max/ansi/rgb` from the `wireless_playground` source line.
+The `qmk/k1-max-ansi-rgb` directory is based on Keychron's current K1 Max ANSI RGB keymap from the **`2025q3`** branch of `Keychron/qmk_firmware` (firmware device version 1.1.1).
 
-Windows base layer changes:
+The firmware customization is intentionally minimal:
 
-- Print Screen: unchanged.
-- Former Cortana key: **F24** (microphone mute trigger).
-- Rightmost top-row key: **Win+L** (lock screen).
-- Key immediately right of Right Alt: **Application / context menu**.
-- Default RGB mode: **Typing Heatmap**.
-- When Scroll Lock is on, the three top-right LEDs (indices 13, 14, 15) are forced to full red; otherwise the current RGB effect shows through.
+- Former Cortana/microphone key on the Windows base layer: **F24** (microphone mute trigger).
+- When Scroll Lock is on, the six LEDs around that key are forced to full red: indices **13, 14, 15, 30, 31, 32**. Otherwise the current RGB effect shows through.
+- Debounce, sleep behavior, Per-Key RGB, Mix RGB and the rest of Keychron's firmware behavior are left at the `2025q3` defaults.
 
-To build it, copy `keymap.c`, `config.h` and `rules.mk` into a keymap directory such as:
+To build it, clone Keychron's QMK tree and switch to the current firmware branch:
+
+```bash
+git clone https://github.com/Keychron/qmk_firmware.git
+cd qmk_firmware
+git checkout 2025q3
+```
+
+Copy `qmk/k1-max-ansi-rgb/keymap.c` and `qmk/k1-max-ansi-rgb/rules.mk` from this repository into a custom keymap directory:
 
 ```text
 keyboards/keychron/k1_max/ansi/rgb/keymaps/micmute/
 ```
 
-Then compile from Keychron's QMK tree:
+Then compile:
 
 ```bash
 qmk compile -kb keychron/k1_max/ansi/rgb -km micmute
 ```
 
-The firmware was developed against Keychron's `wireless_playground` branch. Flashing custom keyboard firmware always carries risk; keep an official firmware image available for recovery.
+The resulting build keeps Keychron's 1.1.1-era Launcher features because it uses the `2025q3` K1 Max implementation, including Keychron RGB support and current wireless configuration support.
+
+Flashing custom keyboard firmware always carries risk; keep an official firmware image available for recovery.
 
 ## Why not a vendor/raw HID channel?
 
-A custom HID status report would avoid Scroll Lock side effects, but Keychron's wireless stack does not expose a simple generic raw-HID path consistently across USB, Bluetooth and 2.4 GHz. The standard host LED state already has a transport path in all three modes, so Scroll Lock is deliberately used as a one-bit status channel.
+A custom HID status report would avoid Scroll Lock side effects, but the standard host LED state already has a transport path in USB, Bluetooth and 2.4 GHz, so Scroll Lock is deliberately used as a one-bit status channel.
 
 ## License
 
