@@ -1,0 +1,83 @@
+name: firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware-build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/qmk/qmk_cli
+
+    steps:
+      - name: Disable safe.directory check
+        run: git config --global --add safe.directory '*'
+
+      - name: Checkout project
+        uses: actions/checkout@v4
+        with:
+          path: project
+
+      - name: Checkout Keychron QMK
+        uses: actions/checkout@v4
+        with:
+          repository: Keychron/qmk_firmware
+          ref: 2025q3
+          fetch-depth: 1
+          path: keychron-qmk
+
+      - name: Deploy QMK submodules
+        working-directory: keychron-qmk
+        run: qmk git-submodule -f
+
+      - name: Install micmute keymap
+        run: |
+          target=keychron-qmk/keyboards/keychron/k1_max/ansi/rgb/keymaps/micmute
+          mkdir -p "$target"
+          cp project/qmk/k1-max-ansi-rgb/keymap.c "$target/keymap.c"
+          cp project/qmk/k1-max-ansi-rgb/rules.mk "$target/rules.mk"
+
+          if [ -f project/qmk/k1-max-ansi-rgb/config.h ]; then
+            cp project/qmk/k1-max-ansi-rgb/config.h "$target/config.h"
+          fi
+
+      - name: Compile K1 Max ANSI RGB firmware
+        working-directory: keychron-qmk
+        run: qmk compile -kb keychron/k1_max/ansi/rgb -km micmute
+
+      - name: Package firmware artifact
+        shell: bash
+        run: |
+          shopt -s nullglob
+          bins=(keychron-qmk/*.bin)
+
+          if [ "${#bins[@]}" -ne 1 ]; then
+            echo "Expected exactly one .bin, found ${#bins[@]}"
+            find keychron-qmk -maxdepth 2 -type f \
+              \( -name '*.bin' -o -name '*.hex' -o -name '*.uf2' \) -print
+            exit 1
+          fi
+
+          mkdir -p artifact
+          cp "${bins[0]}" artifact/Keychron-K1-Max-ANSI-RGB-micmute.bin
+
+          {
+            echo "Project commit: $GITHUB_SHA"
+            echo "Keychron QMK ref: 2025q3"
+            echo "Keychron QMK commit: $(git -C keychron-qmk rev-parse HEAD)"
+            echo "QMK CLI: $(qmk --version 2>&1 | head -n 1)"
+            echo
+            sha256sum artifact/Keychron-K1-Max-ANSI-RGB-micmute.bin
+          } > artifact/build-info.txt
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keychron-K1-Max-ANSI-RGB-micmute-${{ github.sha }}
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 30
