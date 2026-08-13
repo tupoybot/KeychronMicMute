@@ -1,10 +1,6 @@
 #pragma once
 
-#ifdef DEBOUNCE
-#    undef DEBOUNCE
-#endif
-#define DEBOUNCE 30
-
+/* Default RGB effect */
 #ifdef RGB_MATRIX_DEFAULT_MODE
 #    undef RGB_MATRIX_DEFAULT_MODE
 #endif
