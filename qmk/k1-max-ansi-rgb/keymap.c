@@ -16,6 +16,9 @@
 
 #include QMK_KEYBOARD_H
 #include "keychron_common.h"
+#include "keychron_rgb_type.h"
+#include "rgb_matrix_kb_config.h"
+#include <string.h>
 
 enum layers {
     MAC_BASE,
@@ -64,14 +67,58 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 // clang-format on
 
-bool rgb_matrix_indicators_user(void) {
-    if (host_keyboard_led_state().scroll_lock) {
-        rgb_matrix_set_color(13, 255, 0, 0);
-        rgb_matrix_set_color(14, 255, 0, 0);
-        rgb_matrix_set_color(15, 255, 0, 0);
-        rgb_matrix_set_color(30, 255, 0, 0);
-        rgb_matrix_set_color(31, 255, 0, 0);
-        rgb_matrix_set_color(32, 255, 0, 0);
+#define SCROLL_LOCK_INDICATOR_REGION 1
+
+static const uint8_t default_scroll_lock_leds[] = {13, 14, 15, 30, 31, 32};
+
+extern uint8_t         regions[RGB_MATRIX_LED_COUNT];
+extern uint8_t         default_region[RGB_MATRIX_LED_COUNT];
+extern effect_config_t effect_list[EFFECT_LAYERS][EFFECTS_PER_LAYER];
+
+static bool scroll_lock_indicator_uses_launcher_config(void) {
+    // Keep Keychron's factory Mixed RGB setup completely untouched. While the
+    // region map is still the factory default, Scroll Lock uses our historical
+    // 6-key red indicator. As soon as RGB Zone2 membership is changed in
+    // Launcher and saved, Zone2 becomes the Scroll Lock indicator mask.
+    return memcmp(regions, default_region, RGB_MATRIX_LED_COUNT) != 0;
+}
+
+static RGB scroll_lock_indicator_color(void) {
+    // Use the color of the first configured Timeline level in RGB Zone2.
+    for (uint8_t i = 0; i < EFFECTS_PER_LAYER; i++) {
+        if (effect_list[SCROLL_LOCK_INDICATOR_REGION][i].effect != 0) {
+            HSV hsv = {
+                .h = effect_list[SCROLL_LOCK_INDICATOR_REGION][i].hue,
+                .s = effect_list[SCROLL_LOCK_INDICATOR_REGION][i].sat,
+                .v = rgb_matrix_config.hsv.v,
+            };
+            return hsv_to_rgb(hsv);
+        }
     }
+
+    HSV fallback = {.h = 0, .s = 255, .v = rgb_matrix_config.hsv.v};
+    return hsv_to_rgb(fallback);
+}
+
+bool rgb_matrix_indicators_user(void) {
+    if (!host_keyboard_led_state().scroll_lock) {
+        return true;
+    }
+
+    if (!scroll_lock_indicator_uses_launcher_config()) {
+        RGB red = hsv_to_rgb((HSV){.h = 0, .s = 255, .v = rgb_matrix_config.hsv.v});
+        for (uint8_t i = 0; i < sizeof(default_scroll_lock_leds); i++) {
+            rgb_matrix_set_color(default_scroll_lock_leds[i], red.r, red.g, red.b);
+        }
+        return true;
+    }
+
+    RGB color = scroll_lock_indicator_color();
+    for (uint8_t i = 0; i < RGB_MATRIX_LED_COUNT; i++) {
+        if (regions[i] == SCROLL_LOCK_INDICATOR_REGION) {
+            rgb_matrix_set_color(i, color.r, color.g, color.b);
+        }
+    }
+
     return true;
 }
