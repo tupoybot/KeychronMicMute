@@ -40,6 +40,7 @@ jobs:
           mkdir -p "$target"
           cp project/qmk/k1-max-ansi-rgb/keymap.c "$target/keymap.c"
           cp project/qmk/k1-max-ansi-rgb/rules.mk "$target/rules.mk"
+          cp project/qmk/k1-max-ansi-rgb/battery_hid.c "$target/battery_hid.c"
 
           if [ -f project/qmk/k1-max-ansi-rgb/config.h ]; then
             cp project/qmk/k1-max-ansi-rgb/config.h "$target/config.h"
